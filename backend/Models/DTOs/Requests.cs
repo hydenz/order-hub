@@ -40,9 +40,15 @@ public record UpdateTransportTypeRequest(
     [MaxLength(500)] string? Description
 );
 
+public record OrderItemRequest(
+    [Required] int ItemId,
+    [Required, Range(1, int.MaxValue)] int Quantity
+);
+
 public record CreateOrderRequest(
     [Required] int CustomerId,
-    [Required] int TransportTypeId
+    [Required] int TransportTypeId,
+    List<OrderItemRequest>? Items
 );
 
 public record AddItemRequest(

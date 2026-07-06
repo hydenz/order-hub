@@ -56,7 +56,7 @@ npm run dev
 ### Testes
 
 ```bash
-dotnet test tests/order-hub.Tests.csproj
+dotnet test backend/Tests/order-hub.Tests.csproj
 ```
 
 ## Funcionalidades

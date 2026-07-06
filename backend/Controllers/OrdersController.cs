@@ -34,7 +34,7 @@ public class OrdersController : ControllerBase
     {
         try
         {
-            var order = await _service.CreateAsync(request.CustomerId, request.TransportTypeId);
+            var order = await _service.CreateAsync(request.CustomerId, request.TransportTypeId, request.Items);
             return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
         }
         catch (InvalidOperationException ex)

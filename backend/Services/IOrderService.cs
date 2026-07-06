@@ -7,7 +7,7 @@ public interface IOrderService
 {
     Task<List<Order>> GetAllAsync(string? statusFilter, int? customerId, int? transportTypeId, DateTime? startDate, DateTime? endDate);
     Task<Order?> GetByIdAsync(int id);
-    Task<Order> CreateAsync(int customerId, int transportTypeId);
+    Task<Order> CreateAsync(int customerId, int transportTypeId, List<OrderItemRequest>? items = null);
     Task<Order?> AddItemAsync(int orderId, AddItemRequest request);
     Task<Order?> RemoveItemAsync(int orderId, int itemId);
     Task<Order?> PlanAsync(int id);

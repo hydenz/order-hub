@@ -156,7 +156,21 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/orders/1
 Authorization: Bearer {{token}}
 
-### Create order
+### Create order (with items)
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "transportTypeId": 1,
+  "items": [
+    { "itemId": 1, "quantity": 10 },
+    { "itemId": 2, "quantity": 5 }
+  ]
+}
+
+### Create order (without items)
 POST {{baseUrl}}/orders
 Authorization: Bearer {{token}}
 Content-Type: application/json

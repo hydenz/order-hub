@@ -50,7 +50,7 @@ public class OrderService : IOrderService
             .Include(o => o.DeliverySchedule)
             .FirstOrDefaultAsync(o => o.Id == id);
 
-    public async Task<Order> CreateAsync(int customerId, int transportTypeId)
+    public async Task<Order> CreateAsync(int customerId, int transportTypeId, List<OrderItemRequest>? items = null)
     {
         var customer = await _db.Customers
             .Include(c => c.AuthorizedTransportTypes)
@@ -73,9 +73,30 @@ public class OrderService : IOrderService
             UpdatedAt = DateTime.UtcNow
         };
 
+        if (items != null && items.Count != 0)
+        {
+            var itemIds = items.Select(i => i.ItemId).ToList();
+            var existingItems = await _db.Items.Where(i => itemIds.Contains(i.Id)).ToDictionaryAsync(i => i.Id);
+
+            foreach (var item in items)
+            {
+                if (!existingItems.TryGetValue(item.ItemId, out var existing))
+                    throw new InvalidOperationException($"Item com ID {item.ItemId} não encontrado.");
+
+                order.Items.Add(new OrderItem
+                {
+                    ItemId = item.ItemId,
+                    Quantity = item.Quantity,
+                    UnitPrice = existing.Price
+                });
+            }
+
+            order.TotalAmount = order.Items.Sum(i => i.Quantity * i.UnitPrice);
+        }
+
         _db.Orders.Add(order);
         await _db.SaveChangesAsync();
-        await _audit.LogAsync("Order", order.Id, "Criada", null, new { Status = OrderStatus.Criada.ToString(), TransportTypeId = transportTypeId }, "system");
+        await _audit.LogAsync("Order", order.Id, "Criada", null, new { Status = OrderStatus.Criada.ToString(), TransportTypeId = transportTypeId, ItemsCount = items?.Count ?? 0 }, "system");
         return order;
     }
 
