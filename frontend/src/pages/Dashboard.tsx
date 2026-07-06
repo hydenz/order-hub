@@ -6,11 +6,11 @@ import { Link } from 'react-router-dom'
 import { formatBRL } from '../utils/format'
 
 const statusColors: Record<string, string> = {
-  Draft: 'badge badge-draft',
-  Confirmed: 'badge badge-confirmed',
-  Shipped: 'badge badge-shipped',
-  Delivered: 'badge badge-delivered',
-  Cancelled: 'badge badge-cancelled',
+  Criada: 'badge badge-draft',
+  Planejada: 'badge badge-confirmed',
+  Agendada: 'badge badge-shipped',
+  EmTransporte: 'badge badge-shipped',
+  Entregue: 'badge badge-delivered',
 }
 
 export function Dashboard() {
@@ -23,20 +23,25 @@ export function Dashboard() {
 
   return (
     <div className="page">
-      <h1 className="text-2xl font-semibold">Dashboard</h1>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <StatCard title="Pedidos em Aberto" value={data?.openOrders ?? 0} icon="📋" />
-        <StatCard title="Pedidos Confirmados" value={data?.confirmedOrders ?? 0} icon="✅" />
-        <StatCard title="Entregas Agendadas" value={data?.scheduledDeliveries ?? 0} icon="🚚" />
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">Dashboard</h1>
+          <p className="text-sm text-text-muted mt-1">Visão geral dos pedidos</p>
+        </div>
       </div>
 
-      <div className="bg-bg-card border border-border rounded-[--radius-card] p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold">Últimos Pedidos</h2>
-          <Link to="/orders" className="btn">Ver Todos</Link>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0">
+        <StatCard title="Ordens Criadas" value={data?.criadas ?? 0} icon="📋" />
+        <StatCard title="Ordens Agendadas" value={data?.agendadas ?? 0} icon="📅" />
+        <StatCard title="Em Transporte" value={data?.emTransporte ?? 0} icon="🚚" />
+      </div>
+
+      <div className="card">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-text-primary">Últimos Pedidos</h2>
+          <Link to="/orders" className="btn btn-sm">Ver Todos</Link>
         </div>
-        <table className="table w-full">
+        <table className="table">
           <thead>
             <tr>
               <th>#</th>
@@ -52,12 +57,12 @@ export function Dashboard() {
                 <td><Link to={`/orders/${order.id}`} className="text-accent font-medium no-underline hover:underline">#{order.id}</Link></td>
                 <td>{order.customerName}</td>
                 <td><span className={statusColors[order.status]}>{order.status}</span></td>
-                <td>{formatBRL(order.totalAmount)}</td>
-                <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                <td className="font-medium">{formatBRL(order.totalAmount)}</td>
+                <td className="text-text-secondary">{new Date(order.createdAt).toLocaleDateString()}</td>
               </tr>
             ))}
             {data?.recentOrders.length === 0 && (
-              <tr><td colSpan={5} className="text-center text-text-muted py-8">Nenhum pedido encontrado</td></tr>
+              <tr><td colSpan={5} className="text-center text-text-muted py-10">Nenhum pedido encontrado</td></tr>
             )}
           </tbody>
         </table>

@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { api } from '../api/client'
-import type { Order, OrderStatus, Customer } from '../types'
+import type { Order, OrderStatus, Customer, TransportType } from '../types'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useState } from 'react'
 import { Modal } from '../components/Modal'
@@ -8,17 +8,17 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { formatBRL } from '../utils/format'
 
-type OrderForm = { customerId: string }
+type OrderForm = { customerId: string; transportTypeId: string }
 
 const statusColors: Record<string, string> = {
-  Draft: 'badge badge-draft',
-  Confirmed: 'badge badge-confirmed',
-  Shipped: 'badge badge-shipped',
-  Delivered: 'badge badge-delivered',
-  Cancelled: 'badge badge-cancelled',
+  Criada: 'badge badge-draft',
+  Planejada: 'badge badge-confirmed',
+  Agendada: 'badge badge-shipped',
+  EmTransporte: 'badge badge-shipped',
+  Entregue: 'badge badge-delivered',
 }
 
-const statuses: OrderStatus[] = ['Draft', 'Confirmed', 'Shipped', 'Delivered', 'Cancelled']
+const statuses: OrderStatus[] = ['Criada', 'Planejada', 'Agendada', 'EmTransporte', 'Entregue']
 
 export function Orders() {
   const queryClient = useQueryClient()
@@ -26,7 +26,7 @@ export function Orders() {
   const statusFilter = searchParams.get('status') || ''
   const [modalOpen, setModalOpen] = useState(false)
 
-  const { register, handleSubmit: withForm, reset } = useForm<OrderForm>()
+  const { register, handleSubmit: withForm, reset, formState: { errors }, watch } = useForm<OrderForm>()
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['orders', statusFilter],
@@ -38,8 +38,21 @@ export function Orders() {
     queryFn: () => api.get('/customers').then(r => r.data),
   })
 
+  const { data: transportTypes } = useQuery<TransportType[]>({
+    queryKey: ['transport-types'],
+    queryFn: () => api.get('/transporttypes').then(r => r.data),
+  })
+
+  const selectedCustomerId = watch('customerId')
+
+  const { data: customerTransports } = useQuery<TransportType[]>({
+    queryKey: ['customer-transports', selectedCustomerId],
+    queryFn: () => api.get(`/customers/${selectedCustomerId}/transport-types`).then(r => r.data),
+    enabled: !!selectedCustomerId,
+  })
+
   const createMutation = useMutation({
-    mutationFn: (data: { customerId: number }) => api.post('/orders', data),
+    mutationFn: (data: { customerId: number; transportTypeId: number }) => api.post('/orders', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       queryClient.invalidateQueries({ queryKey: ['dashboard'] })
@@ -54,7 +67,10 @@ export function Orders() {
   }
 
   function onSubmit(data: OrderForm) {
-    createMutation.mutate({ customerId: Number(data.customerId) })
+    createMutation.mutate({
+      customerId: Number(data.customerId),
+      transportTypeId: Number(data.transportTypeId),
+    })
   }
 
   if (isLoading) return <div className="flex items-center justify-center py-12 text-text-muted">Carregando...</div>
@@ -62,7 +78,10 @@ export function Orders() {
   return (
     <div className="page">
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl font-semibold">Ordens de Venda</h1>
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">Ordens de Venda</h1>
+          <p className="text-sm text-text-muted mt-1">Gerencie os pedidos dos clientes</p>
+        </div>
         <button className="btn btn-primary" onClick={() => setModalOpen(true)}>+ Nova OV</button>
       </div>
 
@@ -84,17 +103,18 @@ export function Orders() {
         ))}
       </div>
 
-      <div className="bg-bg-card border border-border rounded-[--radius-card] p-6">
-        <table className="table w-full">
+      <div className="card">
+        <table className="table">
           <thead>
             <tr>
               <th>#</th>
               <th>Cliente</th>
+              <th>Transporte</th>
               <th>Status</th>
               <th>Itens</th>
               <th>Total</th>
               <th>Data</th>
-              <th>Ações</th>
+              <th className="w-24">Ações</th>
             </tr>
           </thead>
           <tbody>
@@ -102,33 +122,53 @@ export function Orders() {
               <tr key={order.id}>
                 <td><Link to={`/orders/${order.id}`} className="text-accent font-medium no-underline hover:underline">#{order.id}</Link></td>
                 <td>{order.customer.name}</td>
+                <td className="text-text-secondary">{order.transportType?.name}</td>
                 <td><span className={statusColors[order.status]}>{order.status}</span></td>
-                <td>{order.items.length}</td>
-                <td>{formatBRL(order.totalAmount)}</td>
-                <td>{new Date(order.createdAt).toLocaleDateString()}</td>
+                <td className="text-text-secondary">{order.items.length}</td>
+                <td className="font-medium">{formatBRL(order.totalAmount)}</td>
+                <td className="text-text-secondary">{new Date(order.createdAt).toLocaleDateString()}</td>
                 <td><Link to={`/orders/${order.id}`} className="btn btn-sm">Detalhes</Link></td>
               </tr>
             ))}
             {orders?.length === 0 && (
-              <tr><td colSpan={7} className="text-center text-text-muted py-8">Nenhuma ordem de venda encontrada</td></tr>
+              <tr><td colSpan={8} className="text-center text-text-muted py-10">Nenhuma ordem de venda encontrada</td></tr>
             )}
           </tbody>
         </table>
       </div>
 
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title="Nova Ordem de Venda">
-        <form onSubmit={withForm(onSubmit)} className="flex flex-col gap-4">
+      <Modal open={modalOpen} onClose={() => { setModalOpen(false); reset() }} title="Nova Ordem de Venda">
+        <form onSubmit={withForm(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm text-text-secondary font-medium">Cliente</label>
-            <select {...register('customerId', { required: true })} className="input">
+            <select {...register('customerId', { required: 'Selecione um cliente' })} className="input">
               <option value="">Selecione um cliente</option>
               {customers?.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </select>
+            {errors.customerId && <span className="text-xs text-red">{errors.customerId.message}</span>}
           </div>
-          <div className="flex justify-end pt-2">
-            <button type="submit" className="btn btn-primary">Criar Pedido</button>
+
+          {selectedCustomerId && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm text-text-secondary font-medium">Tipo de Transporte</label>
+              <select {...register('transportTypeId', { required: 'Selecione o transporte' })} className="input">
+                <option value="">Selecione o transporte</option>
+                {customerTransports?.map(t => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+              {errors.transportTypeId && <span className="text-xs text-red">{errors.transportTypeId.message}</span>}
+              {customerTransports?.length === 0 && (
+                <span className="text-xs text-red">Cliente não possui tipos de transporte autorizados</span>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" className="btn" onClick={() => { setModalOpen(false); reset() }}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" disabled={!selectedCustomerId}>Criar Pedido</button>
           </div>
         </form>
       </Modal>

@@ -7,6 +7,7 @@ export interface Customer {
   createdAt: string
   updatedAt: string
   orders?: Order[]
+  authorizedTransportTypes?: TransportType[]
 }
 
 export interface Item {
@@ -35,12 +36,14 @@ export interface OrderItem {
   item: Item
 }
 
-export type OrderStatus = 'Draft' | 'Confirmed' | 'Shipped' | 'Delivered' | 'Cancelled'
+export type OrderStatus = 'Criada' | 'Planejada' | 'Agendada' | 'EmTransporte' | 'Entregue'
 
 export interface Order {
   id: number
   customerId: number
   customer: Customer
+  transportTypeId: number
+  transportType: TransportType
   status: OrderStatus
   totalAmount: number
   createdAt: string
@@ -49,15 +52,12 @@ export interface Order {
   deliverySchedule?: DeliverySchedule
 }
 
-export type DeliveryStatus = 'Scheduled' | 'InTransit' | 'Delivered'
-
 export interface DeliverySchedule {
   id: number
   orderId: number
-  transportTypeId: number
-  transportType: TransportType
   scheduledDate: string
-  status: DeliveryStatus
+  serviceWindowStart?: string
+  serviceWindowEnd?: string
   createdAt: string
   updatedAt: string
 }
@@ -85,9 +85,9 @@ export interface LoginResponse {
 }
 
 export interface DashboardData {
-  openOrders: number
-  confirmedOrders: number
-  scheduledDeliveries: number
+  criadas: number
+  agendadas: number
+  emTransporte: number
   recentOrders: {
     id: number
     customerName: string

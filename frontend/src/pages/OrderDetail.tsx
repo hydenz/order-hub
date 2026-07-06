@@ -10,11 +10,11 @@ import { formatBRL } from '../utils/format'
 type AddItemForm = { itemId: string; quantity: number }
 
 const statusColors: Record<string, string> = {
-  Draft: 'badge badge-draft',
-  Confirmed: 'badge badge-confirmed',
-  Shipped: 'badge badge-shipped',
-  Delivered: 'badge badge-delivered',
-  Cancelled: 'badge badge-cancelled',
+  Criada: 'badge badge-draft',
+  Planejada: 'badge badge-confirmed',
+  Agendada: 'badge badge-shipped',
+  EmTransporte: 'badge badge-shipped',
+  Entregue: 'badge badge-delivered',
 }
 
 export function OrderDetail() {
@@ -22,7 +22,7 @@ export function OrderDetail() {
   const queryClient = useQueryClient()
   const [itemModal, setItemModal] = useState(false)
 
-  const { register, handleSubmit: withForm, reset } = useForm<AddItemForm>()
+  const { register, handleSubmit: withForm, reset, formState: { errors } } = useForm<AddItemForm>()
 
   const { data: order, isLoading } = useQuery<Order>({
     queryKey: ['order', id],
@@ -48,23 +48,32 @@ export function OrderDetail() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['order', id] }),
   })
 
-  const confirmMutation = useMutation({
-    mutationFn: () => api.put(`/orders/${id}/confirm`),
+  const planMutation = useMutation({
+    mutationFn: () => api.put(`/orders/${id}/plan`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['order', id] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }) },
   })
 
-  const cancelMutation = useMutation({
-    mutationFn: () => api.put(`/orders/${id}/cancel`),
+  const scheduleMutation = useMutation({
+    mutationFn: () => api.put(`/orders/${id}/schedule`, {
+      scheduledDate: new Date().toISOString(),
+      serviceWindowStart: null,
+      serviceWindowEnd: null,
+    }),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['order', id] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }) },
   })
 
-  const shipMutation = useMutation({
-    mutationFn: () => api.put(`/orders/${id}/ship`),
+  const startTransportMutation = useMutation({
+    mutationFn: () => api.put(`/orders/${id}/start-transport`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['order', id] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }) },
   })
 
   const deliverMutation = useMutation({
     mutationFn: () => api.put(`/orders/${id}/deliver`),
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['order', id] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }) },
+  })
+
+  const cancelMutation = useMutation({
+    mutationFn: () => api.put(`/orders/${id}/cancel`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['order', id] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }) },
   })
 
@@ -79,85 +88,92 @@ export function OrderDetail() {
 
   return (
     <div className="page">
-      <Link to="/orders" className="text-accent font-medium no-underline hover:underline text-sm">
+      <Link to="/orders" className="flex items-center gap-1 text-sm text-text-secondary hover:text-accent transition-colors no-underline w-fit">
         ← Voltar para Pedidos
       </Link>
 
       <div className="flex items-center justify-between flex-wrap gap-4">
-        <h1 className="text-2xl font-semibold">Ordem #{order.id}</h1>
-        <span className={statusColors[order.status]} style={{ fontSize: '1rem', padding: '0.4rem 1rem' }}>
+        <div>
+          <h1 className="text-2xl font-semibold text-text-primary">Ordem #{order.id}</h1>
+          <p className="text-sm text-text-muted mt-1">Detalhes do pedido</p>
+        </div>
+        <span className={statusColors[order.status]} style={{ fontSize: '0.9rem', padding: '0.35rem 1rem' }}>
           {order.status}
         </span>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-5">
-        <div className="bg-bg-card border border-border rounded-[--radius-card] p-6">
-          <h2 className="text-base font-semibold mb-4">Informações do Pedido</h2>
+        <div className="card">
+          <h2 className="text-base font-semibold text-text-primary mb-4">Informações do Pedido</h2>
           <div className="detail-row"><span>Cliente</span><span>{order.customer.name}</span></div>
+          <div className="detail-row"><span>Transporte</span><span>{order.transportType?.name || '—'}</span></div>
           <div className="detail-row"><span>Total</span><span>{formatBRL(order.totalAmount)}</span></div>
           <div className="detail-row"><span>Criado em</span><span>{new Date(order.createdAt).toLocaleString()}</span></div>
 
-          <div className="flex gap-2 mt-4 flex-wrap">
-            {order.status === 'Draft' && (
+          <div className="flex gap-2 mt-5 flex-wrap">
+            {order.status === 'Criada' && (
               <>
-                <button className="btn btn-primary" onClick={() => confirmMutation.mutate()}>Confirmar Pedido</button>
+                <button className="btn btn-primary" onClick={() => planMutation.mutate()}>Planejar Pedido</button>
                 <button className="btn btn-danger" onClick={() => cancelMutation.mutate()}>Cancelar</button>
               </>
             )}
-            {order.status === 'Confirmed' && (
+            {order.status === 'Planejada' && (
               <>
-                <button className="btn btn-primary" onClick={() => shipMutation.mutate()}>Marcar como Enviado</button>
+                <Link to={`/orders/${id}/delivery`} className="btn btn-primary">Agendar Entrega</Link>
                 <button className="btn btn-danger" onClick={() => cancelMutation.mutate()}>Cancelar</button>
               </>
             )}
-            {order.status === 'Shipped' && (
-              <button className="btn btn-primary" onClick={() => deliverMutation.mutate()}>Marcar como Entregue</button>
+            {order.status === 'Agendada' && (
+              <button className="btn btn-primary" onClick={() => startTransportMutation.mutate()}>Iniciar Transporte</button>
+            )}
+            {order.status === 'EmTransporte' && (
+              <button className="btn btn-primary" onClick={() => deliverMutation.mutate()}>Confirmar Entrega</button>
             )}
           </div>
 
           {order.deliverySchedule && (
-            <div className="mt-4">
-              <h3 className="text-sm font-semibold text-text-secondary mb-2">Entrega</h3>
+            <div className="mt-5 pt-4 border-t border-border">
+              <h3 className="text-sm font-semibold text-text-secondary mb-3">Entrega</h3>
               <div className="detail-row"><span>Data</span><span>{new Date(order.deliverySchedule.scheduledDate).toLocaleDateString()}</span></div>
-              <div className="detail-row"><span>Transporte</span><span>{order.deliverySchedule.transportType.name}</span></div>
-              <div className="detail-row"><span>Status</span><span>{order.deliverySchedule.status}</span></div>
-              <Link to={`/orders/${id}/delivery`} className="btn btn-sm mt-2">Gerenciar Entrega</Link>
+              {order.deliverySchedule.serviceWindowStart && (
+                <div className="detail-row">
+                  <span>Janela</span>
+                  <span>{new Date(order.deliverySchedule.serviceWindowStart).toLocaleTimeString()} - {new Date(order.deliverySchedule.serviceWindowEnd!).toLocaleTimeString()}</span>
+                </div>
+              )}
+              <Link to={`/orders/${id}/delivery`} className="btn btn-sm mt-3">Gerenciar Entrega</Link>
             </div>
-          )}
-
-          {!order.deliverySchedule && (order.status === 'Draft' || order.status === 'Confirmed') && (
-            <Link to={`/orders/${id}/delivery`} className="btn btn-sm mt-4">Agendar Entrega</Link>
           )}
         </div>
 
-        <div className="bg-bg-card border border-border rounded-[--radius-card] p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold">Itens ({order.items.length})</h2>
-            {order.status === 'Draft' && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-base font-semibold text-text-primary">Itens ({order.items.length})</h2>
+            {(order.status === 'Criada' || order.status === 'Planejada') && (
               <button className="btn btn-sm" onClick={() => setItemModal(true)}>+ Adicionar</button>
             )}
           </div>
-          <table className="table w-full">
+          <table className="table">
             <thead>
               <tr>
                 <th>Item</th>
                 <th>Qtd</th>
                 <th>Preço Unit.</th>
                 <th>Subtotal</th>
-                {order.status === 'Draft' && <th></th>}
+                {(order.status === 'Criada' || order.status === 'Planejada') && <th className="w-10"></th>}
               </tr>
             </thead>
             <tbody>
               {order.items.map(oi => (
                 <tr key={oi.id}>
-                  <td>{oi.item.name}</td>
-                  <td>{oi.quantity}</td>
-                  <td>{formatBRL(oi.unitPrice)}</td>
-                  <td>{formatBRL(oi.quantity * oi.unitPrice)}</td>
-                  {order.status === 'Draft' && (
+                  <td className="font-medium">{oi.item.name}</td>
+                  <td className="text-text-secondary">{oi.quantity}</td>
+                  <td className="text-text-secondary">{formatBRL(oi.unitPrice)}</td>
+                  <td className="font-medium">{formatBRL(oi.quantity * oi.unitPrice)}</td>
+                  {(order.status === 'Criada' || order.status === 'Planejada') && (
                     <td>
                       <button
-                        className="bg-transparent border-none text-text-secondary cursor-pointer text-sm p-1 rounded hover:text-red hover:bg-red-bg"
+                        className="bg-transparent border-none text-text-secondary cursor-pointer text-sm p-1.5 rounded-[--radius-sm] hover:text-red hover:bg-red-bg transition-colors"
                         onClick={() => removeItemMutation.mutate(oi.itemId)}
                       >
                         ✕
@@ -167,7 +183,7 @@ export function OrderDetail() {
                 </tr>
               ))}
               {order.items.length === 0 && (
-                <tr><td colSpan={5} className="text-center text-text-muted py-8">Nenhum item adicionado</td></tr>
+                <tr><td colSpan={5} className="text-center text-text-muted py-10">Nenhum item adicionado</td></tr>
               )}
             </tbody>
           </table>
@@ -175,21 +191,24 @@ export function OrderDetail() {
       </div>
 
       <Modal open={itemModal} onClose={() => { setItemModal(false); reset() }} title="Adicionar Item">
-        <form onSubmit={withForm(onSubmit)} className="flex flex-col gap-4">
+        <form onSubmit={withForm(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm text-text-secondary font-medium">Item</label>
-            <select {...register('itemId', { required: true })} className="input">
-              <option value="">Selecione</option>
+            <select {...register('itemId', { required: 'Selecione um item' })} className="input">
+              <option value="">Selecione um item</option>
               {availableItems.map(i => (
                 <option key={i.id} value={i.id}>{i.name} — {formatBRL(i.price)}</option>
               ))}
             </select>
+            {errors.itemId && <span className="text-xs text-red">{errors.itemId.message}</span>}
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-sm text-text-secondary font-medium">Quantidade</label>
-            <input type="number" min="1" defaultValue={1} {...register('quantity', { required: true, valueAsNumber: true })} className="input" />
+            <input type="number" min="1" defaultValue={1} {...register('quantity', { required: 'Quantidade é obrigatória', min: { value: 1, message: 'Mínimo é 1' }, valueAsNumber: true })} className="input" placeholder="1" />
+            {errors.quantity && <span className="text-xs text-red">{errors.quantity.message}</span>}
           </div>
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end gap-2 pt-1">
+            <button type="button" className="btn" onClick={() => { setItemModal(false); reset() }}>Cancelar</button>
             <button type="submit" className="btn btn-primary">Adicionar</button>
           </div>
         </form>

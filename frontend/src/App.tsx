@@ -22,7 +22,7 @@ function AppRoutes() {
   return isAuthenticated ? (
     <div className="flex min-h-screen">
       <Sidebar />
-      <main className="flex-1 p-10 max-w-[1200px] mx-auto w-full">
+      <main className="flex-1 max-w-[1200px] w-full">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/customers" element={<Customers />} />

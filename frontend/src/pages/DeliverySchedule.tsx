@@ -1,16 +1,20 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link } from 'react-router-dom'
 import { api } from '../api/client'
-import type { TransportType, DeliverySchedule as DS } from '../types'
+import type { DeliverySchedule as DS } from '../types'
 import { useForm } from 'react-hook-form'
 
-type DeliveryForm = { scheduledDate: string; transportTypeId: string }
+type DeliveryForm = {
+  scheduledDate: string
+  serviceWindowStart: string
+  serviceWindowEnd: string
+}
 
 export function DeliverySchedulePage() {
   const { id } = useParams<{ id: string }>()
   const queryClient = useQueryClient()
 
-  const { register, handleSubmit: withForm } = useForm<DeliveryForm>()
+  const { register, handleSubmit: withForm, formState: { errors } } = useForm<DeliveryForm>()
 
   const { data: delivery } = useQuery<DS>({
     queryKey: ['delivery', id],
@@ -18,77 +22,72 @@ export function DeliverySchedulePage() {
     retry: false,
   })
 
-  const { data: transportTypes } = useQuery<TransportType[]>({
-    queryKey: ['transport-types'],
-    queryFn: () => api.get('/transporttypes').then(r => r.data),
-  })
-
-  const createMutation = useMutation({
-    mutationFn: (data: { scheduledDate: string; transportTypeId: number }) =>
-      api.post(`/orders/${id}/delivery`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['delivery', id] }); queryClient.invalidateQueries({ queryKey: ['order', id] }) },
-  })
-
-  const updateMutation = useMutation({
-    mutationFn: (data: { scheduledDate: string; transportTypeId: number; status: string }) =>
-      api.put(`/orders/${id}/delivery`, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['delivery', id] }); queryClient.invalidateQueries({ queryKey: ['order', id] }) },
-  })
-
-  const statusMutation = useMutation({
-    mutationFn: (status: string) =>
-      api.put(`/orders/${id}/delivery`, {
-        scheduledDate: delivery!.scheduledDate,
-        transportTypeId: delivery!.transportTypeId,
-        status,
-      }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['delivery', id] }); queryClient.invalidateQueries({ queryKey: ['order', id] }) },
+  const createOrUpdateMutation = useMutation({
+    mutationFn: (data: {
+      scheduledDate: string
+      serviceWindowStart: string | null
+      serviceWindowEnd: string | null
+    }) => api.post(`/orders/${id}/delivery`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['delivery', id] })
+      queryClient.invalidateQueries({ queryKey: ['order', id] })
+    },
   })
 
   function onSubmit(data: DeliveryForm) {
-    const payload = {
+    createOrUpdateMutation.mutate({
       scheduledDate: new Date(data.scheduledDate).toISOString(),
-      transportTypeId: Number(data.transportTypeId),
-    }
-
-    if (delivery) {
-      updateMutation.mutate({ ...payload, status: delivery.status })
-    } else {
-      createMutation.mutate(payload)
-    }
+      serviceWindowStart: data.serviceWindowStart
+        ? new Date(`${data.scheduledDate.slice(0, 10)}T${data.serviceWindowStart}`).toISOString()
+        : null,
+      serviceWindowEnd: data.serviceWindowEnd
+        ? new Date(`${data.scheduledDate.slice(0, 10)}T${data.serviceWindowEnd}`).toISOString()
+        : null,
+    })
   }
 
   return (
     <div className="page">
-      <Link to={`/orders/${id}`} className="text-accent font-medium no-underline hover:underline text-sm">
+      <Link to={`/orders/${id}`} className="flex items-center gap-1 text-sm text-text-secondary hover:text-accent transition-colors no-underline w-fit">
         ← Voltar para Pedido #{id}
       </Link>
 
-      <h1 className="text-2xl font-semibold">Agendamento de Entrega</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-text-primary">Agendamento de Entrega</h1>
+        <p className="text-sm text-text-muted mt-1">Configure a data e janela de atendimento</p>
+      </div>
 
-      <div className="bg-bg-card border border-border rounded-[--radius-card] p-6 max-w-lg">
-        <form onSubmit={withForm(onSubmit)} className="flex flex-col gap-4">
+      <div className="card max-w-lg">
+        <form onSubmit={withForm(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm text-text-secondary font-medium">Data e Hora</label>
+            <label className="text-sm text-text-secondary font-medium">Data da Entrega</label>
             <input
               type="datetime-local"
-              {...register('scheduledDate', { required: true })}
+              {...register('scheduledDate', { required: 'Data é obrigatória' })}
               className="input"
               defaultValue={delivery ? new Date(delivery.scheduledDate).toISOString().slice(0, 16) : ''}
             />
+            {errors.scheduledDate && <span className="text-xs text-red">{errors.scheduledDate.message}</span>}
           </div>
+
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm text-text-secondary font-medium">Tipo de Transporte</label>
-            <select
-              {...register('transportTypeId', { required: true })}
+            <label className="text-sm text-text-secondary font-medium">Janela de Atendimento (início)</label>
+            <input
+              type="time"
+              {...register('serviceWindowStart')}
               className="input"
-              defaultValue={delivery?.transportTypeId || ''}
-            >
-              <option value="">Selecione</option>
-              {transportTypes?.map(t => (
-                <option key={t.id} value={t.id}>{t.name}</option>
-              ))}
-            </select>
+              defaultValue={delivery?.serviceWindowStart ? new Date(delivery.serviceWindowStart).toTimeString().slice(0, 5) : ''}
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm text-text-secondary font-medium">Janela de Atendimento (fim)</label>
+            <input
+              type="time"
+              {...register('serviceWindowEnd')}
+              className="input"
+              defaultValue={delivery?.serviceWindowEnd ? new Date(delivery.serviceWindowEnd).toTimeString().slice(0, 5) : ''}
+            />
           </div>
 
           <div className="flex justify-end pt-2">
@@ -97,23 +96,6 @@ export function DeliverySchedulePage() {
             </button>
           </div>
         </form>
-
-        {delivery && (
-          <div className="mt-6 pt-4 border-t border-border">
-            <h3 className="text-sm font-semibold text-text-secondary mb-3">Status da Entrega</h3>
-            <div className="flex gap-2">
-              {['Scheduled', 'InTransit', 'Delivered'].map(s => (
-                <button
-                  key={s}
-                  className={`filter-btn ${delivery.status === s ? 'active' : ''}`}
-                  onClick={() => statusMutation.mutate(s)}
-                >
-                  {s === 'Scheduled' ? 'Agendado' : s === 'InTransit' ? 'Em Trânsito' : 'Entregue'}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
