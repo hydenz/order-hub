@@ -27,6 +27,8 @@ docker run -p 5000:5000 orderhub
 
 Acessar em `http://localhost:5000`
 
+Documentação da API disponível em `/scalar/v1`.
+
 ### Desenvolvimento
 
 **Backend:**

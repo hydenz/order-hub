@@ -15,6 +15,6 @@ WORKDIR /app
 COPY --from=backend-build /app .
 COPY --from=frontend-build /frontend/dist ./wwwroot
 EXPOSE 5000
-ENV ASPNETCORE_URLS=http://+:5000
+ENV ASPNETCORE_URLS=http://+:${PORT:-5000}
 ENV ASPNETCORE_ENVIRONMENT=Production
 ENTRYPOINT ["dotnet", "order-hub.dll"]
