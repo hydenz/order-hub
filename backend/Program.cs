@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Scalar.AspNetCore;
 using order_hub.Data;
 using order_hub.Services;
 
@@ -65,10 +66,8 @@ using (var scope = app.Services.CreateScope())
     DbSeeder.Seed(db);
 }
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+app.MapOpenApi();
+app.MapScalarApiReference();
 
 app.UseCors();
 app.UseStaticFiles();
