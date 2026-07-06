@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using order_hub.Models.DTOs;
 using order_hub.Services;
 
 namespace order_hub.Controllers;
@@ -13,8 +14,13 @@ public class OrdersController : ControllerBase
     public OrdersController(IOrderService service) => _service = service;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] string? status)
-        => Ok(await _service.GetAllAsync(status));
+    public async Task<IActionResult> GetAll(
+        [FromQuery] string? status,
+        [FromQuery] int? customerId,
+        [FromQuery] int? transportTypeId,
+        [FromQuery] DateTime? startDate,
+        [FromQuery] DateTime? endDate)
+        => Ok(await _service.GetAllAsync(status, customerId, transportTypeId, startDate, endDate));
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
@@ -25,7 +31,17 @@ public class OrdersController : ControllerBase
 
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateOrderRequest request)
-        => CreatedAtAction(nameof(GetById), new { id = 0 }, await _service.CreateAsync(request.CustomerId));
+    {
+        try
+        {
+            var order = await _service.CreateAsync(request.CustomerId, request.TransportTypeId);
+            return CreatedAtAction(nameof(GetById), new { id = order.Id }, order);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
 
     [HttpPost("{id}/items")]
     public async Task<IActionResult> AddItem(int id, AddItemRequest request)
@@ -37,7 +53,7 @@ public class OrdersController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -51,49 +67,49 @@ public class OrdersController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
-    [HttpPut("{id}/confirm")]
-    public async Task<IActionResult> Confirm(int id)
+    [HttpPut("{id}/plan")]
+    public async Task<IActionResult> Plan(int id)
     {
         try
         {
-            var order = await _service.ConfirmAsync(id);
+            var order = await _service.PlanAsync(id);
             return order == null ? NotFound() : Ok(order);
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
-    [HttpPut("{id}/cancel")]
-    public async Task<IActionResult> Cancel(int id)
+    [HttpPut("{id}/schedule")]
+    public async Task<IActionResult> Schedule(int id, [FromBody] ScheduleRequest request)
     {
         try
         {
-            var order = await _service.CancelAsync(id);
+            var order = await _service.ScheduleAsync(id, request.ScheduledDate, request.ServiceWindowStart, request.ServiceWindowEnd);
             return order == null ? NotFound() : Ok(order);
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
-    [HttpPut("{id}/ship")]
-    public async Task<IActionResult> Ship(int id)
+    [HttpPut("{id}/start-transport")]
+    public async Task<IActionResult> StartTransport(int id)
     {
         try
         {
-            var order = await _service.ShipAsync(id);
+            var order = await _service.StartTransportAsync(id);
             return order == null ? NotFound() : Ok(order);
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
     }
 
@@ -107,9 +123,21 @@ public class OrdersController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("{id}/cancel")]
+    public async Task<IActionResult> Cancel(int id)
+    {
+        try
+        {
+            var order = await _service.CancelAsync(id);
+            return order == null ? NotFound() : Ok(order);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
         }
     }
 }
-
-public record CreateOrderRequest(int CustomerId);

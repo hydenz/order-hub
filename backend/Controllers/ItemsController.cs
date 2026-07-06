@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using order_hub.Models;
+using order_hub.Models.DTOs;
 using order_hub.Services;
 
 namespace order_hub.Controllers;
@@ -25,17 +26,37 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Item item)
-        => CreatedAtAction(nameof(GetById), new { id = item.Id }, await _service.CreateAsync(item));
+    public async Task<IActionResult> Create([FromBody] CreateItemRequest request)
+    {
+        var item = new Item
+        {
+            Name = request.Name,
+            Description = request.Description,
+            Price = request.Price,
+            StockQuantity = request.StockQuantity
+        };
+        return CreatedAtAction(nameof(GetById), new { id = item.Id }, await _service.CreateAsync(item));
+    }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Item item)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateItemRequest request)
     {
+        var item = new Item
+        {
+            Name = request.Name,
+            Description = request.Description,
+            Price = request.Price,
+            StockQuantity = request.StockQuantity
+        };
         var result = await _service.UpdateAsync(id, item);
         return result == null ? NotFound() : Ok(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
-        => await _service.DeleteAsync(id) ? NoContent() : NotFound();
+    {
+        var (success, error) = await _service.DeleteAsync(id);
+        if (error != null) return Conflict(new { message = error });
+        return success ? NoContent() : NotFound();
+    }
 }

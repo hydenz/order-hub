@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using order_hub.Models;
+using order_hub.Models.DTOs;
 using order_hub.Services;
 
 namespace order_hub.Controllers;
@@ -25,17 +26,33 @@ public class TransportTypesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(TransportType transportType)
-        => CreatedAtAction(nameof(GetById), new { id = transportType.Id }, await _service.CreateAsync(transportType));
+    public async Task<IActionResult> Create([FromBody] CreateTransportTypeRequest request)
+    {
+        var transportType = new TransportType
+        {
+            Name = request.Name,
+            Description = request.Description
+        };
+        return CreatedAtAction(nameof(GetById), new { id = transportType.Id }, await _service.CreateAsync(transportType));
+    }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, TransportType transportType)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateTransportTypeRequest request)
     {
+        var transportType = new TransportType
+        {
+            Name = request.Name,
+            Description = request.Description
+        };
         var result = await _service.UpdateAsync(id, transportType);
         return result == null ? NotFound() : Ok(result);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
-        => await _service.DeleteAsync(id) ? NoContent() : NotFound();
+    {
+        var (success, error) = await _service.DeleteAsync(id);
+        if (error != null) return Conflict(new { message = error });
+        return success ? NoContent() : NotFound();
+    }
 }

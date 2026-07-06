@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using order_hub.Models;
+using order_hub.Models.DTOs;
 using order_hub.Services;
 
 namespace order_hub.Controllers;
@@ -21,23 +21,16 @@ public class DeliverySchedulesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(int orderId, DeliverySchedule schedule)
+    public async Task<IActionResult> CreateOrUpdate(int orderId, [FromBody] DeliveryRequest request)
     {
         try
         {
-            var result = await _service.CreateAsync(orderId, schedule);
-            return CreatedAtAction(nameof(Get), new { orderId }, result);
+            var result = await _service.CreateOrUpdateAsync(orderId, request.ScheduledDate, request.ServiceWindowStart, request.ServiceWindowEnd);
+            return Ok(result);
         }
         catch (InvalidOperationException ex)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(new { message = ex.Message });
         }
-    }
-
-    [HttpPut]
-    public async Task<IActionResult> Update(int orderId, DeliverySchedule schedule)
-    {
-        var result = await _service.UpdateAsync(orderId, schedule);
-        return result == null ? NotFound() : Ok(result);
     }
 }
