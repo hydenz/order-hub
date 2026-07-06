@@ -8,5 +8,5 @@ public interface ITransportTypeService
     Task<TransportType?> GetByIdAsync(int id);
     Task<TransportType> CreateAsync(TransportType transportType);
     Task<TransportType?> UpdateAsync(int id, TransportType transportType);
-    Task<bool> DeleteAsync(int id);
+    Task<(bool Success, string? Error)> DeleteAsync(int id);
 }

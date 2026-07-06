@@ -49,14 +49,17 @@ public class ItemService : IItemService
         return item;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<(bool Success, string? Error)> DeleteAsync(int id)
     {
         var item = await _db.Items.FindAsync(id);
-        if (item == null) return false;
+        if (item == null) return (false, null);
+
+        var inUse = await _db.OrderItems.AnyAsync(oi => oi.ItemId == id);
+        if (inUse) return (false, "Item está vinculado a pedidos e não pode ser excluído.");
 
         _db.Items.Remove(item);
         await _db.SaveChangesAsync();
         await _audit.LogAsync("Item", id, "Deleted", item, null);
-        return true;
+        return (true, null);
     }
 }

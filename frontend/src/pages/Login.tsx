@@ -1,48 +1,50 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/useAuth'
+import { useForm } from 'react-hook-form'
+
+type LoginForm = { username: string; password: string }
 
 export function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [serverError, setServerError] = useState('')
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<LoginForm>()
+
+  async function onSubmit(data: LoginForm) {
+    setServerError('')
     try {
-      await login({ username, password })
+      await login(data)
       navigate('/')
     } catch {
-      setError('Credenciais inválidas')
-    } finally {
-      setLoading(false)
+      setServerError('Credenciais inválidas')
     }
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-primary">
-      <div className="bg-bg-card border border-border rounded-[--radius-card] p-8 w-full max-w-sm">
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <span className="w-10 h-10 bg-accent rounded-lg flex items-center justify-center font-bold text-sm text-white">
+      <div className="card w-full max-w-sm">
+        <div className="flex flex-col items-center gap-2 mb-8">
+          <span className="w-11 h-11 bg-accent rounded-[--radius-sm] flex items-center justify-center font-bold text-sm text-white">
             OV
           </span>
-          <span className="text-xl font-semibold text-text-primary">OrderHub</span>
+          <span className="text-lg font-semibold text-text-primary mt-1">OrderHub</span>
+          <span className="text-xs text-text-muted">Faça login para continuar</span>
         </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm text-text-secondary font-medium">Usuário</label>
             <input
               className="input"
-              value={username}
-              onChange={e => setUsername(e.target.value)}
               autoFocus
+              placeholder="Digite seu usuário"
+              {...register('username', { required: 'Usuário é obrigatório' })}
             />
+            {errors.username && (
+              <span className="text-xs text-red">{errors.username.message}</span>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -50,21 +52,24 @@ export function Login() {
             <input
               type="password"
               className="input"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
+              placeholder="Digite sua senha"
+              {...register('password', { required: 'Senha é obrigatória', minLength: { value: 4, message: 'Mínimo de 4 caracteres' } })}
             />
+            {errors.password && (
+              <span className="text-xs text-red">{errors.password.message}</span>
+            )}
           </div>
 
-          {error && (
-            <p className="text-sm text-red text-center">{error}</p>
+          {serverError && (
+            <p className="text-sm text-red text-center bg-red-bg rounded-[--radius-sm] py-2 px-3">{serverError}</p>
           )}
 
-          <button type="submit" className="btn btn-primary justify-center" disabled={loading}>
-            {loading ? 'Entrando...' : 'Entrar'}
+          <button type="submit" className="btn btn-primary justify-center w-full" disabled={isSubmitting}>
+            {isSubmitting ? 'Entrando...' : 'Entrar'}
           </button>
         </form>
 
-        <p className="text-xs text-text-muted text-center mt-6">
+        <p className="text-xs text-text-muted text-center mt-6 pt-4 border-t border-border">
           Demo: <span className="font-medium text-text-secondary">admin</span> / <span className="font-medium text-text-secondary">admin123</span>
         </p>
       </div>

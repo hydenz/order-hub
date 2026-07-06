@@ -8,5 +8,5 @@ public interface IItemService
     Task<Item?> GetByIdAsync(int id);
     Task<Item> CreateAsync(Item item);
     Task<Item?> UpdateAsync(int id, Item item);
-    Task<bool> DeleteAsync(int id);
+    Task<(bool Success, string? Error)> DeleteAsync(int id);
 }

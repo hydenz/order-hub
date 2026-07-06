@@ -12,14 +12,17 @@ export function AuditLogs() {
 
   return (
     <div className="page">
-      <h1 className="text-2xl font-semibold">Auditoria</h1>
+      <div>
+        <h1 className="text-2xl font-semibold text-text-primary">Auditoria</h1>
+        <p className="text-sm text-text-muted mt-1">Histórico de alterações do sistema</p>
+      </div>
 
-      <div className="bg-bg-card border border-border rounded-[--radius-card] p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold">Histórico de Alterações ({data?.total || 0})</h2>
+      <div className="card">
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-base font-semibold text-text-primary">Registros ({data?.total || 0})</h2>
         </div>
         <div className="overflow-x-auto">
-          <table className="table w-full">
+          <table className="table">
             <thead>
               <tr>
                 <th>Data</th>
@@ -34,17 +37,17 @@ export function AuditLogs() {
             <tbody>
               {data?.items.map(log => (
                 <tr key={log.id}>
-                  <td className="whitespace-nowrap">{new Date(log.changedAt).toLocaleString()}</td>
+                  <td className="whitespace-nowrap text-text-secondary">{new Date(log.changedAt).toLocaleString()}</td>
                   <td><span className="badge badge-draft">{log.entityType}</span></td>
-                  <td>#{log.entityId}</td>
-                  <td>{log.action}</td>
+                  <td className="text-text-secondary">#{log.entityId}</td>
+                  <td className="font-medium">{log.action}</td>
                   <td className="json-cell">{log.oldValues || '—'}</td>
                   <td className="json-cell">{log.newValues || '—'}</td>
-                  <td>{log.changedBy || '—'}</td>
+                  <td className="text-text-secondary">{log.changedBy || '—'}</td>
                 </tr>
               ))}
               {data?.items.length === 0 && (
-                <tr><td colSpan={7} className="text-center text-text-muted py-8">Nenhum registro de auditoria</td></tr>
+                <tr><td colSpan={7} className="text-center text-text-muted py-10">Nenhum registro de auditoria</td></tr>
               )}
             </tbody>
           </table>
