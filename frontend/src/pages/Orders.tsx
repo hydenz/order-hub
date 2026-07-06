@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { Modal } from '../components/Modal'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
-import { formatBRL } from '../utils/format'
+import { formatBRL, formatStatus } from '../utils/format'
 
 type OrderForm = { customerId: string; transportTypeId: string }
 
@@ -93,7 +93,7 @@ export function Orders() {
             className={`filter-btn ${statusFilter === s ? 'active' : ''}`}
             onClick={() => handleFilter(s)}
           >
-            {s}
+            {formatStatus(s)}
           </button>
         ))}
       </div>
@@ -118,7 +118,7 @@ export function Orders() {
                 <td><Link to={`/orders/${order.id}`} className="text-accent font-medium no-underline hover:underline">#{order.id}</Link></td>
                 <td>{order.customer.name}</td>
                 <td className="text-text-secondary">{order.transportType?.name}</td>
-                <td><span className={statusColors[order.status]}>{order.status}</span></td>
+                <td><span className={statusColors[order.status]}>{formatStatus(order.status)}</span></td>
                 <td className="text-text-secondary">{order.items.length}</td>
                 <td className="font-medium">{formatBRL(order.totalAmount)}</td>
                 <td className="text-text-secondary">{new Date(order.createdAt).toLocaleDateString()}</td>

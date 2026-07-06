@@ -5,7 +5,7 @@ import type { Order, Item } from '../types'
 import { Modal } from '../components/Modal'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { formatBRL } from '../utils/format'
+import { formatBRL, formatStatus } from '../utils/format'
 
 type AddItemForm = { itemId: string; quantity: number }
 
@@ -89,7 +89,7 @@ export function OrderDetail() {
           <p className="text-sm text-text-muted mt-1">Detalhes do pedido</p>
         </div>
         <span className={statusColors[order.status]} style={{ fontSize: '0.9rem', padding: '0.35rem 1rem' }}>
-          {order.status}
+          {formatStatus(order.status)}
         </span>
       </div>
 

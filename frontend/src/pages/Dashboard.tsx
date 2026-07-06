@@ -3,7 +3,7 @@ import { api } from '../api/client'
 import type { DashboardData } from '../types'
 import { StatCard } from '../components/StatCard'
 import { Link } from 'react-router-dom'
-import { formatBRL } from '../utils/format'
+import { formatBRL, formatStatus } from '../utils/format'
 
 const statusColors: Record<string, string> = {
   Criada: 'badge badge-draft',
@@ -56,7 +56,7 @@ export function Dashboard() {
               <tr key={order.id}>
                 <td><Link to={`/orders/${order.id}`} className="text-accent font-medium no-underline hover:underline">#{order.id}</Link></td>
                 <td>{order.customerName}</td>
-                <td><span className={statusColors[order.status]}>{order.status}</span></td>
+                <td><span className={statusColors[order.status]}>{formatStatus(order.status)}</span></td>
                 <td className="font-medium">{formatBRL(order.totalAmount)}</td>
                 <td className="text-text-secondary">{new Date(order.createdAt).toLocaleDateString()}</td>
               </tr>
