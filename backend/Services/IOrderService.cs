@@ -1,18 +1,18 @@
 using order_hub.Models;
+using order_hub.Models.DTOs;
 
 namespace order_hub.Services;
 
-public record AddItemRequest(int ItemId, int Quantity);
-
 public interface IOrderService
 {
-    Task<List<Order>> GetAllAsync(string? statusFilter);
+    Task<List<Order>> GetAllAsync(string? statusFilter, int? customerId, int? transportTypeId, DateTime? startDate, DateTime? endDate);
     Task<Order?> GetByIdAsync(int id);
-    Task<Order> CreateAsync(int customerId);
+    Task<Order> CreateAsync(int customerId, int transportTypeId);
     Task<Order?> AddItemAsync(int orderId, AddItemRequest request);
     Task<Order?> RemoveItemAsync(int orderId, int itemId);
-    Task<Order?> ConfirmAsync(int id);
-    Task<Order?> CancelAsync(int id);
-    Task<Order?> ShipAsync(int id);
+    Task<Order?> PlanAsync(int id);
+    Task<Order?> ScheduleAsync(int id, DateTime scheduledDate, DateTime? serviceWindowStart, DateTime? serviceWindowEnd);
+    Task<Order?> StartTransportAsync(int id);
     Task<Order?> DeliverAsync(int id);
+    Task<Order?> CancelAsync(int id);
 }

@@ -7,8 +7,13 @@ namespace order_hub.Services;
 public class TransportTypeService : ITransportTypeService
 {
     private readonly AppDbContext _db;
+    private readonly IAuditService _audit;
 
-    public TransportTypeService(AppDbContext db) => _db = db;
+    public TransportTypeService(AppDbContext db, IAuditService audit)
+    {
+        _db = db;
+        _audit = audit;
+    }
 
     public async Task<List<TransportType>> GetAllAsync()
         => await _db.TransportTypes.OrderByDescending(t => t.CreatedAt).ToListAsync();
@@ -21,6 +26,7 @@ public class TransportTypeService : ITransportTypeService
         transportType.CreatedAt = DateTime.UtcNow;
         _db.TransportTypes.Add(transportType);
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("TransportType", transportType.Id, "Created", null, transportType);
         return transportType;
     }
 
@@ -29,19 +35,25 @@ public class TransportTypeService : ITransportTypeService
         var t = await _db.TransportTypes.FindAsync(id);
         if (t == null) return null;
 
+        var old = new { t.Name, t.Description };
         t.Name = updated.Name;
         t.Description = updated.Description;
         await _db.SaveChangesAsync();
+        await _audit.LogAsync("TransportType", id, "Updated", old, new { updated.Name, updated.Description });
         return t;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<(bool Success, string? Error)> DeleteAsync(int id)
     {
         var t = await _db.TransportTypes.FindAsync(id);
-        if (t == null) return false;
+        if (t == null) return (false, null);
+
+        var inUse = await _db.Orders.AnyAsync(o => o.TransportTypeId == id);
+        if (inUse) return (false, "Tipo de transporte está vinculado a pedidos e não pode ser excluído.");
 
         _db.TransportTypes.Remove(t);
         await _db.SaveChangesAsync();
-        return true;
+        await _audit.LogAsync("TransportType", id, "Deleted", t, null);
+        return (true, null);
     }
 }

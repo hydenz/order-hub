@@ -16,12 +16,17 @@ public class CustomerService : ICustomerService
     }
 
     public async Task<List<Customer>> GetAllAsync()
-        => await _db.Customers.OrderByDescending(c => c.CreatedAt).ToListAsync();
+        => await _db.Customers
+            .Include(c => c.AuthorizedTransportTypes)
+            .ThenInclude(ct => ct.TransportType)
+            .OrderByDescending(c => c.CreatedAt).ToListAsync();
 
     public async Task<Customer?> GetByIdAsync(int id)
         => await _db.Customers
             .Include(c => c.Orders)
-            .ThenInclude(o => o.Items)
+                .ThenInclude(o => o.Items)
+            .Include(c => c.AuthorizedTransportTypes)
+                .ThenInclude(ct => ct.TransportType)
             .FirstOrDefaultAsync(c => c.Id == id);
 
     public async Task<Customer> CreateAsync(Customer customer)
@@ -52,14 +57,62 @@ public class CustomerService : ICustomerService
         return customer;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<(bool Success, string? Error)> DeleteAsync(int id)
     {
         var customer = await _db.Customers.FindAsync(id);
-        if (customer == null) return false;
+        if (customer == null) return (false, null);
+
+        var hasOrders = await _db.Orders.AnyAsync(o => o.CustomerId == id);
+        if (hasOrders) return (false, "Cliente possui pedidos vinculados e não pode ser excluído.");
 
         _db.Customers.Remove(customer);
         await _db.SaveChangesAsync();
         await _audit.LogAsync("Customer", id, "Deleted", customer, null);
-        return true;
+        return (true, null);
+    }
+
+    public async Task<List<TransportType>> GetAuthorizedTransportTypesAsync(int customerId)
+    {
+        if (!await _db.Customers.AnyAsync(c => c.Id == customerId))
+            throw new InvalidOperationException("Cliente não encontrado.");
+
+        return await _db.CustomerTransportTypes
+            .Where(ct => ct.CustomerId == customerId)
+            .Include(ct => ct.TransportType)
+            .Select(ct => ct.TransportType)
+            .ToListAsync();
+    }
+
+    public async Task AuthorizeTransportTypeAsync(int customerId, int transportTypeId)
+    {
+        if (!await _db.Customers.AnyAsync(c => c.Id == customerId))
+            throw new InvalidOperationException("Cliente não encontrado.");
+
+        if (!await _db.TransportTypes.AnyAsync(t => t.Id == transportTypeId))
+            throw new InvalidOperationException("Tipo de transporte não encontrado.");
+
+        var exists = await _db.CustomerTransportTypes.AnyAsync(ct => ct.CustomerId == customerId && ct.TransportTypeId == transportTypeId);
+        if (exists) return;
+
+        _db.CustomerTransportTypes.Add(new CustomerTransportType
+        {
+            CustomerId = customerId,
+            TransportTypeId = transportTypeId
+        });
+
+        await _db.SaveChangesAsync();
+        await _audit.LogAsync("Customer", customerId, "TransportTypeAuthorized", null, new { TransportTypeId = transportTypeId });
+    }
+
+    public async Task UnauthorizeTransportTypeAsync(int customerId, int transportTypeId)
+    {
+        var ct = await _db.CustomerTransportTypes
+            .FirstOrDefaultAsync(ct => ct.CustomerId == customerId && ct.TransportTypeId == transportTypeId);
+
+        if (ct == null) return;
+
+        _db.CustomerTransportTypes.Remove(ct);
+        await _db.SaveChangesAsync();
+        await _audit.LogAsync("Customer", customerId, "TransportTypeUnauthorized", new { TransportTypeId = transportTypeId }, null);
     }
 }

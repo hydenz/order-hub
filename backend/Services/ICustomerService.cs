@@ -8,5 +8,8 @@ public interface ICustomerService
     Task<Customer?> GetByIdAsync(int id);
     Task<Customer> CreateAsync(Customer customer);
     Task<Customer?> UpdateAsync(int id, Customer customer);
-    Task<bool> DeleteAsync(int id);
+    Task<(bool Success, string? Error)> DeleteAsync(int id);
+    Task<List<TransportType>> GetAuthorizedTransportTypesAsync(int customerId);
+    Task AuthorizeTransportTypeAsync(int customerId, int transportTypeId);
+    Task UnauthorizeTransportTypeAsync(int customerId, int transportTypeId);
 }

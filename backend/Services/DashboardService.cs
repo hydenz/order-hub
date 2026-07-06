@@ -12,9 +12,9 @@ public class DashboardService : IDashboardService
 
     public async Task<object> GetAsync()
     {
-        var openOrders = await _db.Orders.CountAsync(o => o.Status == OrderStatus.Draft);
-        var confirmedOrders = await _db.Orders.CountAsync(o => o.Status == OrderStatus.Confirmed);
-        var scheduledDeliveries = await _db.DeliverySchedules.CountAsync(d => d.Status == DeliveryStatus.Scheduled);
+        var criadas = await _db.Orders.CountAsync(o => o.Status == OrderStatus.Criada);
+        var agendadas = await _db.Orders.CountAsync(o => o.Status == OrderStatus.Agendada);
+        var emTransporte = await _db.Orders.CountAsync(o => o.Status == OrderStatus.EmTransporte);
 
         var recentOrders = await _db.Orders
             .Include(o => o.Customer)
@@ -30,6 +30,6 @@ public class DashboardService : IDashboardService
             })
             .ToListAsync();
 
-        return new { openOrders, confirmedOrders, scheduledDeliveries, recentOrders };
+        return new { criadas, agendadas, emTransporte, recentOrders };
     }
 }
