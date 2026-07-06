@@ -4,11 +4,11 @@ namespace order_hub.Models;
 
 public enum OrderStatus
 {
-    Draft,
-    Confirmed,
-    Shipped,
-    Delivered,
-    Cancelled
+    Criada,
+    Planejada,
+    Agendada,
+    EmTransporte,
+    Entregue
 }
 
 public class Order
@@ -18,8 +18,11 @@ public class Order
     public int CustomerId { get; set; }
     public Customer Customer { get; set; } = null!;
 
+    public int TransportTypeId { get; set; }
+    public TransportType TransportType { get; set; } = null!;
+
     [Required]
-    public OrderStatus Status { get; set; } = OrderStatus.Draft;
+    public OrderStatus Status { get; set; } = OrderStatus.Criada;
 
     public decimal TotalAmount { get; set; }
 

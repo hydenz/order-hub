@@ -22,4 +22,5 @@ public class Customer
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Order> Orders { get; set; } = new List<Order>();
+    public ICollection<CustomerTransportType> AuthorizedTransportTypes { get; set; } = new List<CustomerTransportType>();
 }
