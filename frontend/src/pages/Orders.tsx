@@ -38,11 +38,6 @@ export function Orders() {
     queryFn: () => api.get('/customers').then(r => r.data),
   })
 
-  const { data: transportTypes } = useQuery<TransportType[]>({
-    queryKey: ['transport-types'],
-    queryFn: () => api.get('/transporttypes').then(r => r.data),
-  })
-
   const selectedCustomerId = watch('customerId')
 
   const { data: customerTransports } = useQuery<TransportType[]>({

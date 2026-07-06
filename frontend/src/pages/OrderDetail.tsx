@@ -53,15 +53,6 @@ export function OrderDetail() {
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['order', id] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }) },
   })
 
-  const scheduleMutation = useMutation({
-    mutationFn: () => api.put(`/orders/${id}/schedule`, {
-      scheduledDate: new Date().toISOString(),
-      serviceWindowStart: null,
-      serviceWindowEnd: null,
-    }),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['order', id] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }) },
-  })
-
   const startTransportMutation = useMutation({
     mutationFn: () => api.put(`/orders/${id}/start-transport`),
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['order', id] }); queryClient.invalidateQueries({ queryKey: ['dashboard'] }) },
