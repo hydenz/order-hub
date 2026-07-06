@@ -28,7 +28,7 @@ export function Orders() {
 
   const { register, handleSubmit: withForm, reset, formState: { errors }, watch } = useForm<OrderForm>()
 
-  const { data: orders, isLoading, isFetching } = useQuery<Order[]>({
+  const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['orders', statusFilter],
     queryFn: () => api.get('/orders', { params: statusFilter ? { status: statusFilter } : {} }).then(r => r.data),
     placeholderData: keepPreviousData,
