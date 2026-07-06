@@ -82,12 +82,54 @@ namespace order_hub.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Username = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    Email = table.Column<string>(type: "TEXT", maxLength: 200, nullable: true),
+                    PasswordHash = table.Column<string>(type: "TEXT", nullable: false),
+                    Role = table.Column<string>(type: "TEXT", maxLength: 50, nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "CustomerTransportTypes",
+                columns: table => new
+                {
+                    CustomerId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TransportTypeId = table.Column<int>(type: "INTEGER", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_CustomerTransportTypes", x => new { x.CustomerId, x.TransportTypeId });
+                    table.ForeignKey(
+                        name: "FK_CustomerTransportTypes_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_CustomerTransportTypes_TransportTypes_TransportTypeId",
+                        column: x => x.TransportTypeId,
+                        principalTable: "TransportTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Orders",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     CustomerId = table.Column<int>(type: "INTEGER", nullable: false),
+                    TransportTypeId = table.Column<int>(type: "INTEGER", nullable: false),
                     Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
                     TotalAmount = table.Column<decimal>(type: "TEXT", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
@@ -102,6 +144,12 @@ namespace order_hub.Migrations
                         principalTable: "Customers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Orders_TransportTypes_TransportTypeId",
+                        column: x => x.TransportTypeId,
+                        principalTable: "TransportTypes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -111,9 +159,9 @@ namespace order_hub.Migrations
                     Id = table.Column<int>(type: "INTEGER", nullable: false)
                         .Annotation("Sqlite:Autoincrement", true),
                     OrderId = table.Column<int>(type: "INTEGER", nullable: false),
-                    TransportTypeId = table.Column<int>(type: "INTEGER", nullable: false),
                     ScheduledDate = table.Column<DateTime>(type: "TEXT", nullable: false),
-                    Status = table.Column<string>(type: "TEXT", maxLength: 20, nullable: false),
+                    ServiceWindowStart = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    ServiceWindowEnd = table.Column<DateTime>(type: "TEXT", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false)
                 },
@@ -126,12 +174,6 @@ namespace order_hub.Migrations
                         principalTable: "Orders",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_DeliverySchedules_TransportTypes_TransportTypeId",
-                        column: x => x.TransportTypeId,
-                        principalTable: "TransportTypes",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -163,15 +205,15 @@ namespace order_hub.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_CustomerTransportTypes_TransportTypeId",
+                table: "CustomerTransportTypes",
+                column: "TransportTypeId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_DeliverySchedules_OrderId",
                 table: "DeliverySchedules",
                 column: "OrderId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_DeliverySchedules_TransportTypeId",
-                table: "DeliverySchedules",
-                column: "TransportTypeId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_OrderItems_ItemId",
@@ -187,6 +229,11 @@ namespace order_hub.Migrations
                 name: "IX_Orders_CustomerId",
                 table: "Orders",
                 column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_TransportTypeId",
+                table: "Orders",
+                column: "TransportTypeId");
         }
 
         /// <inheritdoc />
@@ -196,13 +243,16 @@ namespace order_hub.Migrations
                 name: "AuditLogs");
 
             migrationBuilder.DropTable(
+                name: "CustomerTransportTypes");
+
+            migrationBuilder.DropTable(
                 name: "DeliverySchedules");
 
             migrationBuilder.DropTable(
                 name: "OrderItems");
 
             migrationBuilder.DropTable(
-                name: "TransportTypes");
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Items");
@@ -212,6 +262,9 @@ namespace order_hub.Migrations
 
             migrationBuilder.DropTable(
                 name: "Customers");
+
+            migrationBuilder.DropTable(
+                name: "TransportTypes");
         }
     }
 }

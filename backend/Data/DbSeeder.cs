@@ -56,16 +56,34 @@ public static class DbSeeder
         db.TransportTypes.AddRange(transports);
         db.SaveChanges();
 
+        var customerTransports = new List<CustomerTransportType>
+        {
+            new() { CustomerId = customers[0].Id, TransportTypeId = transports[0].Id }, // Caminhão
+            new() { CustomerId = customers[0].Id, TransportTypeId = transports[3].Id }, // Van
+            new() { CustomerId = customers[1].Id, TransportTypeId = transports[0].Id }, // Caminhão
+            new() { CustomerId = customers[1].Id, TransportTypeId = transports[1].Id }, // Avião
+            new() { CustomerId = customers[1].Id, TransportTypeId = transports[3].Id }, // Van
+            new() { CustomerId = customers[2].Id, TransportTypeId = transports[2].Id }, // Navio
+            new() { CustomerId = customers[2].Id, TransportTypeId = transports[0].Id }, // Caminhão
+            new() { CustomerId = customers[3].Id, TransportTypeId = transports[3].Id }, // Van
+            new() { CustomerId = customers[4].Id, TransportTypeId = transports[0].Id }, // Caminhão
+            new() { CustomerId = customers[4].Id, TransportTypeId = transports[3].Id }, // Van
+        };
+        db.CustomerTransportTypes.AddRange(customerTransports);
+        db.SaveChanges();
+
+        var now = DateTime.UtcNow;
+
         var orders = new List<Order>
         {
-            new() { CustomerId = customers[0].Id, Status = OrderStatus.Draft, TotalAmount = 0, CreatedAt = DateTime.UtcNow.AddDays(-5), UpdatedAt = DateTime.UtcNow.AddDays(-5) },
-            new() { CustomerId = customers[1].Id, Status = OrderStatus.Confirmed, TotalAmount = 6349.70m, CreatedAt = DateTime.UtcNow.AddDays(-4), UpdatedAt = DateTime.UtcNow.AddDays(-3) },
-            new() { CustomerId = customers[2].Id, Status = OrderStatus.Shipped, TotalAmount = 2999.70m, CreatedAt = DateTime.UtcNow.AddDays(-3), UpdatedAt = DateTime.UtcNow.AddDays(-2) },
-            new() { CustomerId = customers[0].Id, Status = OrderStatus.Delivered, TotalAmount = 4499.00m, CreatedAt = DateTime.UtcNow.AddDays(-10), UpdatedAt = DateTime.UtcNow.AddDays(-1) },
-            new() { CustomerId = customers[3].Id, Status = OrderStatus.Draft, TotalAmount = 0, CreatedAt = DateTime.UtcNow.AddDays(-2), UpdatedAt = DateTime.UtcNow.AddDays(-2) },
-            new() { CustomerId = customers[4].Id, Status = OrderStatus.Cancelled, TotalAmount = 549.80m, CreatedAt = DateTime.UtcNow.AddDays(-7), UpdatedAt = DateTime.UtcNow.AddDays(-6) },
-            new() { CustomerId = customers[1].Id, Status = OrderStatus.Confirmed, TotalAmount = 1199.80m, CreatedAt = DateTime.UtcNow.AddDays(-1), UpdatedAt = DateTime.UtcNow.AddDays(-1) },
-            new() { CustomerId = customers[2].Id, Status = OrderStatus.Draft, TotalAmount = 0, CreatedAt = DateTime.UtcNow.AddHours(-12), UpdatedAt = DateTime.UtcNow.AddHours(-12) },
+            new() { CustomerId = customers[0].Id, TransportTypeId = transports[0].Id, Status = OrderStatus.Criada, TotalAmount = 0, CreatedAt = now.AddDays(-5), UpdatedAt = now.AddDays(-5) },
+            new() { CustomerId = customers[1].Id, TransportTypeId = transports[0].Id, Status = OrderStatus.Planejada, TotalAmount = 6349.70m, CreatedAt = now.AddDays(-4), UpdatedAt = now.AddDays(-3) },
+            new() { CustomerId = customers[2].Id, TransportTypeId = transports[2].Id, Status = OrderStatus.Agendada, TotalAmount = 2999.70m, CreatedAt = now.AddDays(-3), UpdatedAt = now.AddDays(-2) },
+            new() { CustomerId = customers[0].Id, TransportTypeId = transports[0].Id, Status = OrderStatus.EmTransporte, TotalAmount = 4499.00m, CreatedAt = now.AddDays(-10), UpdatedAt = now.AddDays(-1) },
+            new() { CustomerId = customers[3].Id, TransportTypeId = transports[3].Id, Status = OrderStatus.Criada, TotalAmount = 0, CreatedAt = now.AddDays(-2), UpdatedAt = now.AddDays(-2) },
+            new() { CustomerId = customers[4].Id, TransportTypeId = transports[3].Id, Status = OrderStatus.Planejada, TotalAmount = 549.80m, CreatedAt = now.AddDays(-7), UpdatedAt = now.AddDays(-6) },
+            new() { CustomerId = customers[1].Id, TransportTypeId = transports[1].Id, Status = OrderStatus.Entregue, TotalAmount = 1199.80m, CreatedAt = now.AddDays(-1), UpdatedAt = now.AddDays(-1) },
+            new() { CustomerId = customers[2].Id, TransportTypeId = transports[0].Id, Status = OrderStatus.Criada, TotalAmount = 0, CreatedAt = now.AddHours(-12), UpdatedAt = now.AddHours(-12) },
         };
         db.Orders.AddRange(orders);
         db.SaveChanges();
@@ -91,26 +109,33 @@ public static class DbSeeder
 
         var schedules = new List<DeliverySchedule>
         {
-            new() { OrderId = orders[1].Id, TransportTypeId = transports[0].Id, ScheduledDate = DateTime.UtcNow.AddDays(7), Status = DeliveryStatus.Scheduled, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new() { OrderId = orders[2].Id, TransportTypeId = transports[1].Id, ScheduledDate = DateTime.UtcNow.AddDays(2), Status = DeliveryStatus.InTransit, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
-            new() { OrderId = orders[3].Id, TransportTypeId = transports[2].Id, ScheduledDate = DateTime.UtcNow.AddDays(-2), Status = DeliveryStatus.Delivered, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow },
+            new() { OrderId = orders[2].Id, ScheduledDate = now.AddDays(7), ServiceWindowStart = now.AddDays(7).Date.AddHours(8), ServiceWindowEnd = now.AddDays(7).Date.AddHours(17), CreatedAt = now, UpdatedAt = now },
+            new() { OrderId = orders[3].Id, ScheduledDate = now.AddDays(2), ServiceWindowStart = now.AddDays(2).Date.AddHours(9), ServiceWindowEnd = now.AddDays(2).Date.AddHours(18), CreatedAt = now, UpdatedAt = now },
+            new() { OrderId = orders[6].Id, ScheduledDate = now.AddDays(-2), ServiceWindowStart = now.AddDays(-2).Date.AddHours(8), ServiceWindowEnd = now.AddDays(-2).Date.AddHours(17), CreatedAt = now, UpdatedAt = now },
         };
         db.DeliverySchedules.AddRange(schedules);
         db.SaveChanges();
 
         var audits = new List<AuditLog>
         {
-            new() { EntityType = "Order", EntityId = orders[1].Id, Action = "Created", OldValues = null, NewValues = "{\"status\":\"Draft\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-4) },
-            new() { EntityType = "Order", EntityId = orders[1].Id, Action = "Confirmed", OldValues = "{\"status\":\"Draft\"}", NewValues = "{\"status\":\"Confirmed\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-3) },
-            new() { EntityType = "Order", EntityId = orders[2].Id, Action = "Created", OldValues = null, NewValues = "{\"status\":\"Draft\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-3) },
-            new() { EntityType = "Order", EntityId = orders[2].Id, Action = "Confirmed", OldValues = "{\"status\":\"Draft\"}", NewValues = "{\"status\":\"Confirmed\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-2) },
-            new() { EntityType = "Order", EntityId = orders[2].Id, Action = "Shipped", OldValues = "{\"status\":\"Confirmed\"}", NewValues = "{\"status\":\"Shipped\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-2).AddHours(3) },
-            new() { EntityType = "Order", EntityId = orders[3].Id, Action = "Created", OldValues = null, NewValues = "{\"status\":\"Draft\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-10) },
-            new() { EntityType = "Order", EntityId = orders[3].Id, Action = "Confirmed", OldValues = "{\"status\":\"Draft\"}", NewValues = "{\"status\":\"Confirmed\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-9) },
-            new() { EntityType = "Order", EntityId = orders[3].Id, Action = "Shipped", OldValues = "{\"status\":\"Confirmed\"}", NewValues = "{\"status\":\"Shipped\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-5) },
-            new() { EntityType = "Order", EntityId = orders[3].Id, Action = "Delivered", OldValues = "{\"status\":\"Shipped\"}", NewValues = "{\"status\":\"Delivered\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-1) },
-            new() { EntityType = "Order", EntityId = orders[5].Id, Action = "Created", OldValues = null, NewValues = "{\"status\":\"Draft\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-7) },
-            new() { EntityType = "Order", EntityId = orders[5].Id, Action = "Cancelled", OldValues = "{\"status\":\"Draft\"}", NewValues = "{\"status\":\"Cancelled\"}", ChangedBy = "system", ChangedAt = DateTime.UtcNow.AddDays(-6) },
+            new() { EntityType = "Order", EntityId = orders[0].Id, Action = "Criada", OldValues = null, NewValues = "{\"status\":\"Criada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-5) },
+            new() { EntityType = "Order", EntityId = orders[1].Id, Action = "Criada", OldValues = null, NewValues = "{\"status\":\"Criada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-4) },
+            new() { EntityType = "Order", EntityId = orders[1].Id, Action = "Planejada", OldValues = "{\"status\":\"Criada\"}", NewValues = "{\"status\":\"Planejada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-3) },
+            new() { EntityType = "Order", EntityId = orders[2].Id, Action = "Criada", OldValues = null, NewValues = "{\"status\":\"Criada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-3) },
+            new() { EntityType = "Order", EntityId = orders[2].Id, Action = "Planejada", OldValues = "{\"status\":\"Criada\"}", NewValues = "{\"status\":\"Planejada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-2) },
+            new() { EntityType = "Order", EntityId = orders[2].Id, Action = "Agendada", OldValues = "{\"status\":\"Planejada\"}", NewValues = "{\"status\":\"Agendada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-2).AddHours(2) },
+            new() { EntityType = "DeliverySchedule", EntityId = schedules[0].Id, Action = "Created", OldValues = null, NewValues = "{\"scheduledDate\":\"" + now.AddDays(7).ToString("O") + "\"}", ChangedBy = "system", ChangedAt = now.AddDays(-2).AddHours(2) },
+            new() { EntityType = "Order", EntityId = orders[3].Id, Action = "Criada", OldValues = null, NewValues = "{\"status\":\"Criada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-10) },
+            new() { EntityType = "Order", EntityId = orders[3].Id, Action = "Planejada", OldValues = "{\"status\":\"Criada\"}", NewValues = "{\"status\":\"Planejada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-9) },
+            new() { EntityType = "Order", EntityId = orders[3].Id, Action = "Agendada", OldValues = "{\"status\":\"Planejada\"}", NewValues = "{\"status\":\"Agendada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-5) },
+            new() { EntityType = "Order", EntityId = orders[3].Id, Action = "EmTransporte", OldValues = "{\"status\":\"Agendada\"}", NewValues = "{\"status\":\"EmTransporte\"}", ChangedBy = "system", ChangedAt = now.AddDays(-1) },
+            new() { EntityType = "Order", EntityId = orders[5].Id, Action = "Criada", OldValues = null, NewValues = "{\"status\":\"Criada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-7) },
+            new() { EntityType = "Order", EntityId = orders[5].Id, Action = "Planejada", OldValues = "{\"status\":\"Criada\"}", NewValues = "{\"status\":\"Planejada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-6) },
+            new() { EntityType = "Order", EntityId = orders[6].Id, Action = "Criada", OldValues = null, NewValues = "{\"status\":\"Criada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-1) },
+            new() { EntityType = "Order", EntityId = orders[6].Id, Action = "Planejada", OldValues = "{\"status\":\"Criada\"}", NewValues = "{\"status\":\"Planejada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-1).AddHours(2) },
+            new() { EntityType = "Order", EntityId = orders[6].Id, Action = "Agendada", OldValues = "{\"status\":\"Planejada\"}", NewValues = "{\"status\":\"Agendada\"}", ChangedBy = "system", ChangedAt = now.AddDays(-1).AddHours(3) },
+            new() { EntityType = "Order", EntityId = orders[6].Id, Action = "EmTransporte", OldValues = "{\"status\":\"Agendada\"}", NewValues = "{\"status\":\"EmTransporte\"}", ChangedBy = "system", ChangedAt = now.AddDays(-1).AddHours(5) },
+            new() { EntityType = "Order", EntityId = orders[6].Id, Action = "Entregue", OldValues = "{\"status\":\"EmTransporte\"}", NewValues = "{\"status\":\"Entregue\"}", ChangedBy = "system", ChangedAt = now.AddDays(-1).AddHours(7) },
         };
         db.AuditLogs.AddRange(audits);
         db.SaveChanges();

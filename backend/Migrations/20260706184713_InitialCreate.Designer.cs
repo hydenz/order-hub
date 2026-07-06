@@ -11,7 +11,7 @@ using order_hub.Data;
 namespace order_hub.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260706174544_InitialCreate")]
+    [Migration("20260706184713_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -91,6 +91,21 @@ namespace order_hub.Migrations
                     b.ToTable("Customers");
                 });
 
+            modelBuilder.Entity("order_hub.Models.CustomerTransportType", b =>
+                {
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("TransportTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("CustomerId", "TransportTypeId");
+
+                    b.HasIndex("TransportTypeId");
+
+                    b.ToTable("CustomerTransportTypes");
+                });
+
             modelBuilder.Entity("order_hub.Models.DeliverySchedule", b =>
                 {
                     b.Property<int>("Id")
@@ -106,13 +121,11 @@ namespace order_hub.Migrations
                     b.Property<DateTime>("ScheduledDate")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(20)
+                    b.Property<DateTime?>("ServiceWindowEnd")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("TransportTypeId")
-                        .HasColumnType("INTEGER");
+                    b.Property<DateTime?>("ServiceWindowStart")
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
@@ -121,8 +134,6 @@ namespace order_hub.Migrations
 
                     b.HasIndex("OrderId")
                         .IsUnique();
-
-                    b.HasIndex("TransportTypeId");
 
                     b.ToTable("DeliverySchedules");
                 });
@@ -179,12 +190,17 @@ namespace order_hub.Migrations
                     b.Property<decimal>("TotalAmount")
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("TransportTypeId")
+                        .HasColumnType("INTEGER");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("TransportTypeId");
 
                     b.ToTable("Orders");
                 });
@@ -239,6 +255,57 @@ namespace order_hub.Migrations
                     b.ToTable("TransportTypes");
                 });
 
+            modelBuilder.Entity("order_hub.Models.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("order_hub.Models.CustomerTransportType", b =>
+                {
+                    b.HasOne("order_hub.Models.Customer", "Customer")
+                        .WithMany("AuthorizedTransportTypes")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("order_hub.Models.TransportType", "TransportType")
+                        .WithMany("AuthorizedCustomers")
+                        .HasForeignKey("TransportTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("TransportType");
+                });
+
             modelBuilder.Entity("order_hub.Models.DeliverySchedule", b =>
                 {
                     b.HasOne("order_hub.Models.Order", "Order")
@@ -247,15 +314,7 @@ namespace order_hub.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("order_hub.Models.TransportType", "TransportType")
-                        .WithMany()
-                        .HasForeignKey("TransportTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.Navigation("Order");
-
-                    b.Navigation("TransportType");
                 });
 
             modelBuilder.Entity("order_hub.Models.Order", b =>
@@ -266,7 +325,15 @@ namespace order_hub.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("order_hub.Models.TransportType", "TransportType")
+                        .WithMany()
+                        .HasForeignKey("TransportTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Customer");
+
+                    b.Navigation("TransportType");
                 });
 
             modelBuilder.Entity("order_hub.Models.OrderItem", b =>
@@ -290,6 +357,8 @@ namespace order_hub.Migrations
 
             modelBuilder.Entity("order_hub.Models.Customer", b =>
                 {
+                    b.Navigation("AuthorizedTransportTypes");
+
                     b.Navigation("Orders");
                 });
 
@@ -298,6 +367,11 @@ namespace order_hub.Migrations
                     b.Navigation("DeliverySchedule");
 
                     b.Navigation("Items");
+                });
+
+            modelBuilder.Entity("order_hub.Models.TransportType", b =>
+                {
+                    b.Navigation("AuthorizedCustomers");
                 });
 #pragma warning restore 612, 618
         }
