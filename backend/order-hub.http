@@ -1,6 +1,243 @@
-@order_hub_HostAddress = http://localhost:5245
+@baseUrl = http://localhost:5000/api
+@token = <token>
 
-GET {{order_hub_HostAddress}}/weatherforecast/
-Accept: application/json
+### Auth — Login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
 
-###
+{ "username": "admin", "password": "admin123" }
+
+### Auth — Login (via JSON variable)
+# @name login
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{ "username": "admin", "password": "admin123" }
+
+### Set token from login response
+@token = {{login.response.body.token}}
+
+### ───────── Customers ─────────
+
+### List all customers
+GET {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+
+### Get customer by ID
+GET {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+
+### Create customer
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Cliente Exemplo",
+  "email": "cliente@email.com",
+  "phone": "11999999999",
+  "document": "123.456.789-00"
+}
+
+### Update customer
+PUT {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Cliente Atualizado",
+  "email": "cliente@email.com",
+  "phone": "11999999999",
+  "document": "123.456.789-00"
+}
+
+### Delete customer
+DELETE {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+
+### Get authorized transport types for customer
+GET {{baseUrl}}/customers/1/transport-types
+Authorization: Bearer {{token}}
+
+### Authorize transport type for customer
+POST {{baseUrl}}/customers/1/transport-types
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "transportTypeId": 1 }
+
+### Unauthorize transport type for customer
+DELETE {{baseUrl}}/customers/1/transport-types/1
+Authorization: Bearer {{token}}
+
+### ───────── Items ─────────
+
+### List all items
+GET {{baseUrl}}/items
+Authorization: Bearer {{token}}
+
+### Get item by ID
+GET {{baseUrl}}/items/1
+Authorization: Bearer {{token}}
+
+### Create item
+POST {{baseUrl}}/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Exemplo",
+  "description": "Descrição do produto",
+  "price": 99.90,
+  "stockQuantity": 50
+}
+
+### Update item
+PUT {{baseUrl}}/items/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Produto Atualizado",
+  "description": "Descrição atualizada",
+  "price": 129.90,
+  "stockQuantity": 30
+}
+
+### Delete item
+DELETE {{baseUrl}}/items/1
+Authorization: Bearer {{token}}
+
+### ───────── Transport Types ─────────
+
+### List all transport types
+GET {{baseUrl}}/transporttypes
+Authorization: Bearer {{token}}
+
+### Get transport type by ID
+GET {{baseUrl}}/transporttypes/1
+Authorization: Bearer {{token}}
+
+### Create transport type
+POST {{baseUrl}}/transporttypes
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Caminhão",
+  "description": "Transporte rodoviário via caminhão"
+}
+
+### Update transport type
+PUT {{baseUrl}}/transporttypes/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Caminhão Atualizado",
+  "description": "Descrição atualizada"
+}
+
+### Delete transport type
+DELETE {{baseUrl}}/transporttypes/1
+Authorization: Bearer {{token}}
+
+### ───────── Orders ─────────
+
+### List all orders
+GET {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+
+### List orders with filters
+GET {{baseUrl}}/orders?status=Criada&customerId=1&startDate=2025-01-01&endDate=2026-12-31
+Authorization: Bearer {{token}}
+
+### Get order by ID
+GET {{baseUrl}}/orders/1
+Authorization: Bearer {{token}}
+
+### Create order
+POST {{baseUrl}}/orders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "transportTypeId": 1
+}
+
+### Add item to order
+POST {{baseUrl}}/orders/1/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "itemId": 1,
+  "quantity": 10
+}
+
+### Remove item from order
+DELETE {{baseUrl}}/orders/1/items/1
+Authorization: Bearer {{token}}
+
+### ───────── Order Status Transitions ─────────
+
+### Plan order (Criada → Planejada)
+PUT {{baseUrl}}/orders/1/plan
+Authorization: Bearer {{token}}
+
+### Schedule order (Planejada → Agendada)
+PUT {{baseUrl}}/orders/1/schedule
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "scheduledDate": "2026-07-15T08:00:00Z",
+  "serviceWindowStart": "2026-07-15T08:00:00Z",
+  "serviceWindowEnd": "2026-07-15T12:00:00Z"
+}
+
+### Start transport (Agendada → EmTransporte)
+PUT {{baseUrl}}/orders/1/start-transport
+Authorization: Bearer {{token}}
+
+### Deliver (EmTransporte → Entregue)
+PUT {{baseUrl}}/orders/1/deliver
+Authorization: Bearer {{token}}
+
+### Cancel order (any status)
+PUT {{baseUrl}}/orders/1/cancel
+Authorization: Bearer {{token}}
+
+### ───────── Delivery Schedules ─────────
+
+### Get delivery schedule for order
+GET {{baseUrl}}/orders/1/delivery
+Authorization: Bearer {{token}}
+
+### Create or update delivery schedule
+POST {{baseUrl}}/orders/1/delivery
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "scheduledDate": "2026-07-15T08:00:00Z",
+  "serviceWindowStart": "2026-07-15T08:00:00Z",
+  "serviceWindowEnd": "2026-07-15T12:00:00Z"
+}
+
+### ───────── Dashboard ─────────
+
+### Get dashboard stats
+GET {{baseUrl}}/dashboard
+Authorization: Bearer {{token}}
+
+### ───────── Audit Logs ─────────
+
+### Get audit logs
+GET {{baseUrl}}/auditlogs
+Authorization: Bearer {{token}}
+
+### Get audit logs with pagination
+GET {{baseUrl}}/auditlogs?page=1&pageSize=10
+Authorization: Bearer {{token}}
