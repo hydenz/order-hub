@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { Order, OrderStatus, Customer, TransportType } from '../types'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -28,9 +28,10 @@ export function Orders() {
 
   const { register, handleSubmit: withForm, reset, formState: { errors }, watch } = useForm<OrderForm>()
 
-  const { data: orders, isLoading } = useQuery<Order[]>({
+  const { data: orders, isLoading, isFetching } = useQuery<Order[]>({
     queryKey: ['orders', statusFilter],
     queryFn: () => api.get('/orders', { params: statusFilter ? { status: statusFilter } : {} }).then(r => r.data),
+    placeholderData: keepPreviousData,
   })
 
   const { data: customers } = useQuery<Customer[]>({
